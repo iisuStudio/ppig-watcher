@@ -34,7 +34,7 @@ const handleRequest = function (request, response) {
 };
 
 const httpsServer = https.createServer(serverConfig, handleRequest);
-httpsServer.listen(HTTPS_PORT);
+httpsServer.listen(HTTPS_PORT,'0.0.0.0');
 
 // ----------------------------------------------------------------------------------------
 
@@ -69,4 +69,4 @@ http.createServer(function (req, res) {
     console.log(req.headers['host']+req.url);
     res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
     res.end();
-}).listen(HTTP_PORT);
+}).listen(HTTP_PORT,'0.0.0.0');
