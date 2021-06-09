@@ -115,6 +115,7 @@ function gotRemoteStream(event, peerUuid) {
     vidElement = document.createElement('video');
   }
   vidElement.setAttribute('autoplay', '');
+  vidElement.setAttribute('playsinline', '');
   //vidElement.setAttribute('muted', '');
   vidElement.srcObject = event.streams[0];
 
