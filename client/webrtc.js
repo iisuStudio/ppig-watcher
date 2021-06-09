@@ -28,7 +28,7 @@ function start() {
       height: {max: 240},
       frameRate: {max: 30},
     },
-    audio: false,
+    audio: true,
   };
 
   // set up local video stream
@@ -110,9 +110,12 @@ function createdDescription(description, peerUuid) {
 function gotRemoteStream(event, peerUuid) {
   console.log(`got remote stream, peer ${peerUuid}`);
   //assign stream to new HTML video element
-  var vidElement = document.createElement('video');
+  var vidElement = document.getElementById('remoteVideo_' + peerUuid);
+  if (!vidElement) {
+    vidElement = document.createElement('video');
+  }
   vidElement.setAttribute('autoplay', '');
-  vidElement.setAttribute('muted', '');
+  //vidElement.setAttribute('muted', '');
   vidElement.srcObject = event.streams[0];
 
   var vidContainer = document.createElement('div');
