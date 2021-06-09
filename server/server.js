@@ -42,21 +42,35 @@ httpsServer.listen(HTTPS_PORT,'0.0.0.0');
 const wss = new WebSocketServer({ server: httpsServer });
 
 wss.on('connection', function (ws) {
-  ws.on('message', function (message) {
-    // Broadcast any received message to all clients
-    console.log('received: %s', message);
-    wss.broadcast(message);
-  });
+    ws.room = [];
+    ws.send(JSON.stringify({msg: "user joined"}));
+    ws.on('message', function (message) {
+        // Broadcast any received message to all clients
+        console.log('received: %s', message);
+
+        var data = JSON.parse(message);
+
+        if (data.join) {
+            ws.room.push(data.join)
+        }
+        if (data.room) {
+            wss.broadcast(message);
+        }
+        if (data.msg) {
+            console.log('message: ', messag.msg)
+        }
+
+    });
 
   ws.on('error', () => ws.terminate());
 });
 
 wss.broadcast = function (data) {
-  this.clients.forEach(function (client) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
-  });
+    this.clients.forEach(function (client) {
+        if (client.readyState === WebSocket.OPEN && client.room.indexOf(JSON.parse(data).room) > -1) {
+            client.send(data)
+        }
+    });
 };
 
 console.log('Server running.'

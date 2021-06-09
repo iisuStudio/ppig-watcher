@@ -1,6 +1,7 @@
 const WS_PORT = 8443; //make sure this matches the port for the webscokets server
 
 var localUuid;
+var localRoom;
 var localDisplayName;
 var localStream;
 var serverConnection;
@@ -13,13 +14,26 @@ var peerConnectionConfig = {
   ]
 };
 
+function shareImgClick() {
+  if (document.getElementById('shareImg').getAttribute('class') === 'share-img') {
+    document.getElementById('shareImg').setAttribute('class', 'share-img-fullscreen')
+  } else {
+    document.getElementById('shareImg').setAttribute('class', 'share-img')
+  }
+}
+
 function start() {
   localUuid = createUUID();
 
   // check if "&displayName=xxx" is appended to URL, otherwise alert user to populate
   var urlParams = new URLSearchParams(window.location.search);
-  localDisplayName = urlParams.get('displayName') || prompt('Enter your name', '');
+  localDisplayName = urlParams.get('displayName') || prompt('請輸入姓名', '');
+  localRoom = urlParams.get('room') || prompt('請輸入房間號碼', '');
   document.getElementById('localVideoContainer').appendChild(makeLabel(localDisplayName));
+
+  var shareUrl = new URL(location.href);
+  shareUrl.searchParams.set('room', localRoom);
+  document.getElementById('shareImg').setAttribute('src', 'https://chart.googleapis.com/chart?cht=qr&chs=177x177&chl=' + encodeURIComponent(shareUrl.href) + '&choe=UTF-8');
 
   // specify no audio for user media
   var constraints = {
@@ -44,7 +58,8 @@ function start() {
         serverConnection = new WebSocket('wss://' + window.location.hostname + ':' + WS_PORT);
         serverConnection.onmessage = gotMessageFromServer;
         serverConnection.onopen = event => {
-          serverConnection.send(JSON.stringify({ 'displayName': localDisplayName, 'uuid': localUuid, 'dest': 'all' }));
+          serverConnection.send(JSON.stringify({ 'join': localRoom }));
+          serverConnection.send(JSON.stringify({ 'displayName': localDisplayName, 'uuid': localUuid, 'room': localRoom, 'dest': 'all' }));
         }
       }).catch(errorHandler);
 
@@ -63,7 +78,7 @@ function gotMessageFromServer(message) {
   if (signal.displayName && signal.dest == 'all') {
     // set up peer connection object for a newcomer peer
     setUpPeer(peerUuid, signal.displayName);
-    serverConnection.send(JSON.stringify({ 'displayName': localDisplayName, 'uuid': localUuid, 'dest': peerUuid }));
+    serverConnection.send(JSON.stringify({ 'displayName': localDisplayName, 'uuid': localUuid, 'room': localRoom, 'dest': peerUuid }));
 
   } else if (signal.displayName && signal.dest == localUuid) {
     // initiate call if we are the newcomer peer
@@ -96,14 +111,14 @@ function setUpPeer(peerUuid, displayName, initCall = false) {
 
 function gotIceCandidate(event, peerUuid) {
   if (event.candidate != null) {
-    serverConnection.send(JSON.stringify({ 'ice': event.candidate, 'uuid': localUuid, 'dest': peerUuid }));
+    serverConnection.send(JSON.stringify({ 'ice': event.candidate, 'uuid': localUuid, 'room': localRoom, 'dest': peerUuid }));
   }
 }
 
 function createdDescription(description, peerUuid) {
   console.log(`got description, peer ${peerUuid}`);
   peerConnections[peerUuid].pc.setLocalDescription(description).then(function () {
-    serverConnection.send(JSON.stringify({ 'sdp': peerConnections[peerUuid].pc.localDescription, 'uuid': localUuid, 'dest': peerUuid }));
+    serverConnection.send(JSON.stringify({ 'sdp': peerConnections[peerUuid].pc.localDescription, 'uuid': localUuid, 'room': localRoom, 'dest': peerUuid }));
   }).catch(errorHandler);
 }
 
